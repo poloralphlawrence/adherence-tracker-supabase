@@ -51,7 +51,6 @@
         <label>Date
           <input type="date" id="userFilterDate">
         </label>
-        <button id="applyUserFilters">Apply</button>
       </div>
 
       <h2>My Adherence Records</h2>
@@ -101,7 +100,6 @@
             <option value="Asia/Manila" selected>Philippine Time (PHT)</option>
           </select>
         </label>
-        <button id="applyFilters">Apply</button>
         <button id="exportCsv">Export CSV</button>
       </div>
 
@@ -146,7 +144,7 @@
     const userView = document.getElementById("userView");
     const adminView = document.getElementById("adminView");
 
-    // Timezone formatter
+    // Format dates
     function formatDate(dateString, tzSelector = "timezoneSelect") {
       const tz =
         tzSelector === "timezoneSelect"
@@ -162,6 +160,16 @@
         second: "2-digit",
         hour12: false
       }).replace(/,/g, "");
+    }
+
+    // Helpers: get start and end of day in selected timezone
+    function getDayRangeInTimezone(dateStr, tz) {
+      const base = new Date(dateStr + "T00:00:00Z"); // base in UTC
+      const start = new Date(base.toLocaleString("en-US", { timeZone: tz }));
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
+      return { start, end };
     }
 
     // LOGIN
@@ -262,7 +270,7 @@
       startTime = null;
     });
 
-    // Load user records with filter
+    // Load user records
     async function loadUserRecords() {
       document.getElementById("tableBody").innerHTML = "";
       let query = db.from('adherence').select('*').eq("username", currentUserEmail).order('start_time', { ascending: false });
@@ -290,10 +298,9 @@
         });
       }
     }
+    document.getElementById("userFilterDate").addEventListener("change", loadUserRecords);
 
-    document.getElementById("applyUserFilters").addEventListener("click", loadUserRecords);
-
-    // Load admin records
+    // Load admin records with timezone-aware date
     async function loadAdminRecords() {
       document.getElementById("adminTableBody").innerHTML = "";
       let query = db.from("adherence").select("*").order("start_time", { ascending: false });
@@ -301,11 +308,10 @@
       const date = document.getElementById("filterDate").value;
       const user = document.getElementById("filterUser").value;
       const type = document.getElementById("filterType").value;
+      const tz = document.getElementById("timezoneSelect").value;
 
       if (date) {
-        const start = new Date(date);
-        const end = new Date(date);
-        end.setDate(end.getDate() + 1);
+        const { start, end } = getDayRangeInTimezone(date, tz);
         query = query.gte("start_time", start.toISOString()).lt("start_time", end.toISOString());
       }
       if (user) query = query.ilike("username", `%${user}%`);
@@ -327,20 +333,23 @@
       }
     }
 
-    document.getElementById("applyFilters").addEventListener("click", loadAdminRecords);
+    // Auto-update admin table
+    document.getElementById("filterDate").addEventListener("change", loadAdminRecords);
+    document.getElementById("filterUser").addEventListener("input", loadAdminRecords);
+    document.getElementById("filterType").addEventListener("change", loadAdminRecords);
+    document.getElementById("timezoneSelect").addEventListener("change", loadAdminRecords);
 
-    // Export CSV
+    // Export CSV (timezone-aware)
     document.getElementById("exportCsv").addEventListener("click", async () => {
       let query = db.from("adherence").select("*").order("start_time", { ascending: false });
 
       const date = document.getElementById("filterDate").value;
       const user = document.getElementById("filterUser").value;
       const type = document.getElementById("filterType").value;
+      const tz = document.getElementById("timezoneSelect").value;
 
       if (date) {
-        const start = new Date(date);
-        const end = new Date(date);
-        end.setDate(end.getDate() + 1);
+        const { start, end } = getDayRangeInTimezone(date, tz);
         query = query.gte("start_time", start.toISOString()).lt("start_time", end.toISOString());
       }
       if (user) query = query.ilike("username", `%${user}%`);
@@ -360,9 +369,7 @@
         ]);
       });
 
-      const tz = document.getElementById("timezoneSelect").value;
-      let tzLabel = tz === "America/New_York" ? "EST" : tz === "America/Los_Angeles" ? "PST" : "PHT";
-
+      const tzLabel = tz === "America/New_York" ? "EST" : tz === "America/Los_Angeles" ? "PST" : "PHT";
       const csvContent = rows.map(e => e.join(",")).join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
