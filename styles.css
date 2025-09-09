@@ -1,0 +1,105 @@
+/* Theme Variables */
+:root {
+  --bg-color: #f7f9fc;
+  --text-color: #333;
+  --card-bg: #fff;
+  --table-bg: #fff;
+  --table-hover: #f2f7fb;
+  --primary: #3498db;
+  --primary-hover: #2980b9;
+  --danger: #e74c3c;
+  --danger-hover: #c0392b;
+}
+
+.dark-mode {
+  --bg-color: #1e1e1e;
+  --text-color: #f0f0f0;
+  --card-bg: #2c2c2c;
+  --table-bg: #2c2c2c;
+  --table-hover: #333;
+  --primary: #4da3ff;
+  --primary-hover: #1e6ecf;
+  --danger: #ff5a5a;
+  --danger-hover: #d93636;
+}
+
+/* Apply Theme Variables */
+body {
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  padding: 20px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.card {
+  background: var(--card-bg);
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 400px;
+  margin: 20px auto;
+  text-align: center;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: var(--table-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+th {
+  background: var(--primary);
+  color: #fff;
+}
+
+tr:hover {
+  background: var(--table-hover);
+}
+
+/* Buttons */
+button {
+  background: var(--primary);
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: var(--primary-hover);
+}
+
+#logoutBtn, #logoutBtnAdmin {
+  background: var(--danger);
+}
+
+#logoutBtn:hover, #logoutBtnAdmin:hover {
+  background: var(--danger-hover);
+}
+
+/* Dark Mode Toggle Button */
+#themeToggle {
+  margin: 0 auto 20px;
+  display: block;
+  width: auto;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}

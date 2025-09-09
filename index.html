@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Adherence Tracker with Roles</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .hidden { display: none; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; max-width: 400px; margin: auto; }
+    .card h2 { margin-top: 0; }
+    input, select, button { margin-top: 8px; padding: 8px; width: 100%; }
+    .filters { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+    .filters label { display: flex; flex-direction: column; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1>Adherence Tracker</h1>
+<button id="themeToggle">🌙 Dark Mode</button>
+  <!-- Login/Register Section -->
+  <div id="authSection" class="card">
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email" required />
+    <input type="password" id="loginPassword" placeholder="Password" required />
+    <button id="loginBtn">Login</button>
+    <p style="text-align:center">or</p>
+    <button id="signupBtn">Sign Up</button>
+  </div>
+
+  <!-- Main App Section -->
+  <div id="appSection" class="hidden">
+    <p>Welcome, <span id="currentUser"></span> (<span id="currentRole"></span>) | <button id="logoutBtn">Logout</button></p>
+
+    <!-- USER VIEW -->
+    <div id="userView" class="hidden">
+      <form id="adherenceForm">
+        <div>
+          <label for="adherenceType">Adherence Type</label>
+          <select id="adherenceType" name="adherenceType" required>
+            <option value="Online">Online</option>
+            <option value="Offline">Offline</option>
+            <option value="Break 1">Break 1</option>
+            <option value="Break 2">Break 2</option>
+            <option value="Lunch Break">Lunch Break</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Adhoc Task">Adhoc Task</option>
+            <option value="Training">Training</option>
+          </select>
+        </div>
+        <div>
+          <button type="button" id="startBtn">Start</button>
+          <button type="button" id="stopBtn" class="hidden">Stop</button>
+        </div>
+      </form>
+
+      <h2>My Adherence Records</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Adherence Type</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Duration (minutes)</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="adminView" class="hidden">
+      <h2>All Adherence Records</h2>
+
+      <!-- Filters -->
+      <div class="filters">
+        <label>Date
+          <input type="date" id="filterDate">
+        </label>
+        <label>User
+          <input type="text" id="filterUser" placeholder="Enter user email">
+        </label>
+        <label>Adherence Type
+          <select id="filterType">
+            <option value="">All</option>
+            <option value="Online">Online</option>
+            <option value="Offline">Offline</option>
+            <option value="Break 1">Break 1</option>
+            <option value="Break 2">Break 2</option>
+            <option value="Lunch Break">Lunch Break</option>
+            <option value="Meeting">Meeting</option>
+            <option value="Adhoc Task">Adhoc Task</option>
+            <option value="Training">Training</option>
+          </select>
+        </label>
+        <label>Timezone
+          <select id="timezoneSelect">
+            <option value="America/New_York">Eastern Time (EST)</option>
+            <option value="America/Los_Angeles">Pacific Time (PST)</option>
+            <option value="Asia/Manila" selected>Philippine Time (PHT)</option>
+          </select>
+        </label>
+        <button id="applyFilters">Apply</button>
+        <button id="exportCsv">Export CSV</button>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Adherence Type</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Duration (minutes)</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Supabase client -->
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <script>
+    const { createClient } = supabase;
+    const db = createClient("https://omlcjvwofcdejcmybyax.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tbGNqdndvZmNkZWpjbXlieWF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNzE4MjAsImV4cCI6MjA3Mjk0NzgyMH0.t00W8wIOQFMprjF8_6AvPPt2zteEs56-rI9Esw4OF_I");
+
+    let startTime = null;
+    let currentUserEmail = null;
+    let currentUserId = null;
+    let currentUserRole = "user";
+
+	// Dark Mode Toggle
+	const themeToggle = document.getElementById("themeToggle");
+	themeToggle.addEventListener("click", () => {
+	  document.body.classList.toggle("dark-mode");
+	  if (document.body.classList.contains("dark-mode")) {
+	    themeToggle.textContent = "☀️ Light Mode";
+	  } else {
+	    themeToggle.textContent = "🌙 Dark Mode";
+	  }
+	});
+
+    // Auth elements
+    const authSection = document.getElementById("authSection");
+    const appSection = document.getElementById("appSection");
+    const currentUserSpan = document.getElementById("currentUser");
+    const currentRoleSpan = document.getElementById("currentRole");
+    const userView = document.getElementById("userView");
+    const adminView = document.getElementById("adminView");
+
+    // Timezone formatter
+    function formatDate(dateString) {
+      const tz = document.getElementById("timezoneSelect")?.value || "Asia/Manila";
+      return new Date(dateString).toLocaleString("en-US", {
+        timeZone: tz,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }).replace(/,/g, ""); // remove comma between date & time
+    }
+
+    // LOGIN
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      const { data, error } = await db.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert("Login failed: " + error.message);
+      } else {
+        currentUserEmail = data.user.email;
+        currentUserId = data.user.id;
+        await fetchUserRole();
+        showApp();
+      }
+    });
+
+    // SIGNUP
+    document.getElementById("signupBtn").addEventListener("click", async () => {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      const { data, error } = await db.auth.signUp({ email, password });
+      if (error) {
+        alert("Signup failed: " + error.message);
+      } else {
+        alert("Signup successful! Please check your email to confirm.");
+      }
+    });
+
+    // LOGOUT
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await db.auth.signOut();
+      currentUserEmail = null;
+      authSection.classList.remove("hidden");
+      appSection.classList.add("hidden");
+    });
+
+    // Fetch user role from profiles table
+    async function fetchUserRole() {
+      const { data, error } = await db.from("profiles").select("role").eq("id", currentUserId).single();
+      if (!error && data) {
+        currentUserRole = data.role;
+      } else {
+        currentUserRole = "user";
+      }
+    }
+
+    // Show App
+    function showApp() {
+      authSection.classList.add("hidden");
+      appSection.classList.remove("hidden");
+      currentUserSpan.textContent = currentUserEmail;
+      currentRoleSpan.textContent = currentUserRole;
+
+      if (currentUserRole === "admin") {
+        adminView.classList.remove("hidden");
+        userView.classList.add("hidden");
+        loadAdminRecords();
+      } else {
+        userView.classList.remove("hidden");
+        adminView.classList.add("hidden");
+        loadUserRecords();
+      }
+    }
+
+    // Start button
+    document.getElementById('startBtn').addEventListener('click', function () {
+      startTime = new Date();
+      document.getElementById('startBtn').classList.add('hidden');
+      document.getElementById('stopBtn').classList.remove('hidden');
+      document.getElementById('adherenceType').disabled = true;
+    });
+
+    // Stop button
+    document.getElementById('stopBtn').addEventListener('click', async function () {
+      if (!startTime) {
+        alert("You must start first!");
+        return;
+      }
+
+      const endTime = new Date();
+      const adherenceType = document.getElementById('adherenceType').value;
+      const duration = ((endTime - startTime) / 1000 / 60).toFixed(2);
+
+      const { error } = await db.from('adherence').insert([{
+        user_id: currentUserId,
+        username: currentUserEmail,
+        adherence_type: adherenceType,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        duration: duration
+      }]);
+
+      if (error) {
+        console.error(error);
+        alert("Error saving to Supabase");
+      } else {
+        loadUserRecords();
+      }
+
+      document.getElementById('startBtn').classList.remove('hidden');
+      document.getElementById('stopBtn').classList.add('hidden');
+      document.getElementById('adherenceType').disabled = false;
+      startTime = null;
+    });
+
+    // Load user records
+    async function loadUserRecords() {
+      document.getElementById("tableBody").innerHTML = "";
+      const { data, error } = await db
+        .from('adherence')
+        .select('*')
+        .eq("username", currentUserEmail)
+        .order('start_time', { ascending: false });
+
+      if (!error) {
+        data.forEach(record => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${record.username}</td>
+            <td>${record.adherence_type}</td>
+            <td>${formatDate(record.start_time)}</td>
+            <td>${formatDate(record.end_time)}</td>
+            <td>${record.duration}</td>
+          `;
+          document.getElementById('tableBody').appendChild(row);
+        });
+      }
+    }
+
+    // Load admin records
+    async function loadAdminRecords() {
+      document.getElementById("adminTableBody").innerHTML = "";
+      let query = db.from("adherence").select("*").order("start_time", { ascending: false });
+
+      const date = document.getElementById("filterDate").value;
+      const user = document.getElementById("filterUser").value;
+      const type = document.getElementById("filterType").value;
+
+      if (date) {
+        const start = new Date(date);
+        const end = new Date(date);
+        end.setDate(end.getDate() + 1);
+        query = query.gte("start_time", start.toISOString()).lt("start_time", end.toISOString());
+      }
+      if (user) query = query.ilike("username", `%${user}%`);
+      if (type) query = query.eq("adherence_type", type);
+
+      const { data, error } = await query;
+      if (!error) {
+        data.forEach(record => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${record.username}</td>
+            <td>${record.adherence_type}</td>
+            <td>${formatDate(record.start_time)}</td>
+            <td>${formatDate(record.end_time)}</td>
+            <td>${record.duration}</td>
+          `;
+          document.getElementById("adminTableBody").appendChild(row);
+        });
+      }
+    }
+
+    document.getElementById("applyFilters").addEventListener("click", loadAdminRecords);
+
+    // Export CSV
+    document.getElementById("exportCsv").addEventListener("click", async () => {
+      let query = db.from("adherence").select("*").order("start_time", { ascending: false });
+
+      const date = document.getElementById("filterDate").value;
+      const user = document.getElementById("filterUser").value;
+      const type = document.getElementById("filterType").value;
+
+      if (date) {
+        const start = new Date(date);
+        const end = new Date(date);
+        end.setDate(end.getDate() + 1);
+        query = query.gte("start_time", start.toISOString()).lt("start_time", end.toISOString());
+      }
+      if (user) query = query.ilike("username", `%${user}%`);
+      if (type) query = query.eq("adherence_type", type);
+
+      const { data, error } = await query;
+      if (error) {
+        alert("Error exporting CSV");
+        return;
+      }
+
+      const rows = [["User", "Adherence Type", "Start Time", "End Time", "Duration"]];
+      data.forEach(record => {
+        rows.push([
+          record.username,
+          record.adherence_type,
+          formatDate(record.start_time),
+          formatDate(record.end_time),
+          record.duration
+        ]);
+      });
+
+      // timezone label for filename
+      const tz = document.getElementById("timezoneSelect").value;
+      let tzLabel = "UTC";
+      if (tz === "America/New_York") tzLabel = "EST";
+      if (tz === "America/Los_Angeles") tzLabel = "PST";
+      if (tz === "Asia/Manila") tzLabel = "PHT";
+
+      let csvContent = rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `adherence_records_${tzLabel}.csv`;
+      link.click();
+    });
+
+    // Check auth state on load
+    db.auth.getSession().then(async ({ data }) => {
+      if (data.session) {
+        currentUserEmail = data.session.user.email;
+        currentUserId = data.session.user.id;
+        await fetchUserRole();
+        showApp();
+      }
+    });
+  </script>
+</body>
+</html>
