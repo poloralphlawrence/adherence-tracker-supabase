@@ -59,6 +59,19 @@
       box-sizing: border-box;
       height: 42px;
     }
+    .adherence-timer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .adherence-timer span {
+      font-weight: 500;
+      min-width: 80px;
+      font-size: 15px;
+      color: #3148F6;
+      letter-spacing: 1px;
+    }
 
     /* ====== User table header (title + date filter in one line) ====== */
     .user-table-header {
@@ -216,7 +229,10 @@
           <div class="adherence-button">
             <label style="visibility:hidden">&nbsp;</label>
             <button type="button" id="startBtn">Start</button>
-            <button type="button" id="stopBtn" class="hidden" style="margin-top:8px;">Stop</button>
+            <div class="adherence-timer hidden" id="adherenceTimerBox">
+              <button type="button" id="stopBtn" style="margin-top:0;">Stop</button>
+              <span id="runningTime">00:00:00</span>
+            </div>
           </div>
         </form>
       </div>
@@ -312,6 +328,7 @@
     const db = createClient("https://omlcjvwofcdejcmybyax.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tbGNqdndvZmNkZWpjbXlieWF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczNzE4MjAsImV4cCI6MjA3Mjk0NzgyMH0.t00W8wIOQFMprjF8_6AvPPt2zteEs56-rI9Esw4OF_I");
 
     let startTime = null;
+    let timerInterval = null;
     let currentUserEmail = null;
     let currentUserId = null;
     let currentUserRole = "user";
@@ -434,12 +451,27 @@
       }
     }
 
-    // Start / Stop adherence
+    // Timer formatting
+    function formatElapsed(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+      const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+      const seconds = String(totalSeconds % 60).padStart(2, "0");
+      return `${hours}:${minutes}:${seconds}`;
+    }
+
+    // Start / Stop adherence with timer
     document.getElementById('startBtn').addEventListener('click', () => {
       startTime = new Date();
       document.getElementById('startBtn').classList.add('hidden');
-      document.getElementById('stopBtn').classList.remove('hidden');
       document.getElementById('adherenceType').disabled = true;
+      // Show timer and stop button
+      document.getElementById('adherenceTimerBox').classList.remove('hidden');
+      document.getElementById('runningTime').textContent = "00:00:00";
+      timerInterval = setInterval(() => {
+        const now = new Date();
+        document.getElementById('runningTime').textContent = formatElapsed(now - startTime);
+      }, 1000);
     });
 
     document.getElementById('stopBtn').addEventListener('click', async () => {
@@ -461,8 +493,12 @@
       loadUserRecords();
 
       document.getElementById('startBtn').classList.remove('hidden');
-      document.getElementById('stopBtn').classList.add('hidden');
       document.getElementById('adherenceType').disabled = false;
+      // Hide timer and stop button
+      document.getElementById('adherenceTimerBox').classList.add('hidden');
+      document.getElementById('runningTime').textContent = "00:00:00";
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
       startTime = null;
     });
 
@@ -586,4 +622,3 @@
   </script>
 </body>
 </html>
-
