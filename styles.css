@@ -29,9 +29,9 @@ body.dark-mode {
 }
 
 /* Pastel blue for Login button */
-#loginBtn {
-  background: #a3c9f9;
-  color: #1C2127;
+#loginBtn, #startBtn {
+  background: #1b59a5;
+  color: #ffffff;
   border: none;
 }
 
@@ -41,8 +41,8 @@ body.dark-mode {
 
 /* Pastel green for Sign Up button */
 #signupBtn {
-  background: #b8f2c9;
-  color: #e3e8ed;
+  background: #57d47d;
+  color: #232c37;
   border: none;
 }
 
