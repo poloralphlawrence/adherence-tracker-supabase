@@ -32,7 +32,7 @@ body.dark-mode {
    Base Styles
 ============================== */
 body {
-  font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
   background: var(--bg-color);
   color: var(--text-color);
   margin: 0;
