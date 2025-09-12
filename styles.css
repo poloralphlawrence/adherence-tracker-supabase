@@ -28,6 +28,28 @@ body.dark-mode {
   --danger-hover: #c0392b;
 }
 
+/* Pastel blue for Login button */
+#loginBtn {
+  background: #a3c9f9;
+  color: #1C2127;
+  border: none;
+}
+
+#loginBtn:hover {
+  background: #7bb6f7;
+}
+
+/* Pastel green for Sign Up button */
+#signupBtn {
+  background: #b8f2c9;
+  color: #e3e8ed;
+  border: none;
+}
+
+#signupBtn:hover {
+  background: #8ee6a8;
+}
+
 /* ==============================
    Base Styles
 ============================== */
