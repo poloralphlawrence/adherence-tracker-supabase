@@ -11,6 +11,8 @@
     html, body {
       font-family: 'Inter', Arial, Helvetica, sans-serif;
     }
+  <style>
+    /* ====== Header ====== */
     .header {
       display: flex;
       justify-content: space-between;
@@ -34,11 +36,13 @@
     .top-right-controls a:hover {
       text-decoration: underline;
     }
+
+    /* ====== User controls (1/3 width, left aligned) ====== */
     .user-controls-wrapper {
       width: 33%;
       min-width: 280px;
       margin: 16px 0;
-      margin-left: 25px;
+      margin-left: 25px; /* align with header left padding */
     }
     .adherence-controls {
       display: grid;
@@ -68,6 +72,8 @@
       color: #3148F6;
       letter-spacing: 1px;
     }
+
+    /* ====== User table header (title + date filter in one line) ====== */
     .user-table-header {
       width: 95%;
       max-width: 1200px;
@@ -76,26 +82,32 @@
       justify-content: space-between;
       align-items: center;
     }
+
     .user-table-header h2 {
       flex: 1;
       text-align: center;
       margin: 0;
     }
+
     .filters-user {
       display: flex;
       justify-content: flex-end;
     }
+
     .filters-user label {
       display: flex;
       flex-direction: column;
       font-size: 14px;
     }
+
     .filters-user input[type="date"] {
       width: 170px;
       height: 42px;
       box-sizing: border-box;
       margin-top: 4px;
     }
+
+    /* ====== Admin filters + export button ====== */
     .filters-admin {
       display: grid;
       grid-template-columns: repeat(4, minmax(160px, 1fr)) 160px;
@@ -124,7 +136,7 @@
       align-items: end;
     }
     .filters-admin .export-btn button {
-      height: 42px;
+      height: 42px; /* matches filter fields height */
       padding: 0 16px;
       font-weight: bold;
       border-radius: 6px;
@@ -136,50 +148,10 @@
     .filters-admin .export-btn button:hover {
       background: var(--primary-hover, #1C4B8F);
     }
+
+    /* ====== Misc/Responsive ====== */
     .hidden { display: none; }
-    .active-adherence-section {
-      margin: 20px 0 30px 0;
-      max-width: 1100px;
-      margin-left: auto;
-      margin-right: auto;
-      background: #f7f8fa;
-      border-radius: 8px;
-      padding: 18px 12px 10px 12px;
-      box-shadow: 0 1px 4px rgba(60,60,60,0.06);
-    }
-    .active-adherence-section h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 19px;
-      color: #3148F6;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-    .active-adherence-section table {
-      width: 100%;
-      border-collapse: collapse;
-      background: transparent;
-    }
-    .active-adherence-section th, .active-adherence-section td {
-      padding: 7px 8px;
-      border-bottom: 1px solid #e2e6ee;
-      text-align: left;
-      font-size: 15px;
-    }
-    .active-adherence-section th {
-      background: #eaf0ff;
-      font-weight: 600;
-      color: #3148F6;
-    }
-    .active-adherence-section td {
-      color: #222;
-    }
-    .active-adherence-section .running-timer {
-      font-family: 'Inter', monospace;
-      font-weight: 600;
-      color: #1C4B8F;
-      letter-spacing: 1px;
-    }
+
     @media (max-width: 900px) {
       .user-controls-wrapper {
         width: 90%;
@@ -204,29 +176,27 @@
       .filters-user {
         justify-content: center;
       }
-      .active-adherence-section {
-        padding: 10px 2px 6px 2px;
-      }
-      .active-adherence-section th, .active-adherence-section td {
-        font-size: 13px;
-        padding: 5px 4px;
-      }
     }
   </style>
 </head>
 <body>
+  <!-- Header -->
   <div class="header">
     <div class="header-left">
       <span id="welcomeText" class="hidden">
         Welcome, <span id="currentUser"></span> (<span id="currentRole"></span>)
       </span>
     </div>
+
     <div class="top-right-controls">
       <a href="#" id="themeToggle">Dark Mode</a>   
       <a href="#" id="logoutLink" class="hidden">Log Out</a>
     </div>
   </div>
+
   <h1 style="margin-top:6px; text-align:center;">Adherence Tracker</h1>
+
+  <!-- Login/Register Section -->
   <div id="authSection" class="card">
     <h2>Login</h2>
     <input type="email" id="loginEmail" placeholder="Email" required />
@@ -235,7 +205,10 @@
     <p style="text-align:center">or</p>
     <button id="signupBtn">Sign Up</button>
   </div>
+
+  <!-- Main App Section -->
   <div id="appSection" class="hidden">
+    <!-- USER VIEW -->
     <div id="userView" class="hidden">
       <div class="user-controls-wrapper">
         <form id="adherenceForm" class="adherence-controls" onsubmit="return false;">
@@ -253,6 +226,7 @@
               <option value="Training">Training</option>
             </select>
           </div>
+
           <div class="adherence-button">
             <label style="visibility:hidden">&nbsp;</label>
             <button type="button" id="startBtn">Start</button>
@@ -263,6 +237,8 @@
           </div>
         </form>
       </div>
+
+      <!-- User table header (title + date filter) -->
       <div class="user-table-header">
         <h2>My Adherence Records</h2>
         <div class="filters-user">
@@ -272,6 +248,7 @@
           </label>
         </div>
       </div>
+
       <table>
         <thead>
           <tr>
@@ -285,31 +262,22 @@
         <tbody id="tableBody"></tbody>
       </table>
     </div>
+
+    <!-- ADMIN VIEW -->
     <div id="adminView" class="hidden">
       <h2 style="text-align:center">All Adherence Records</h2>
-      <div id="activeAdherenceSection" class="active-adherence-section">
-        <h3>Active Adherence Sessions</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Adherence Type</th>
-              <th>Start Time</th>
-              <th>Running Time</th>
-            </tr>
-          </thead>
-          <tbody id="activeAdherenceBody"></tbody>
-        </table>
-      </div>
+
       <div class="filters-admin">
         <label>
           Date
           <input type="date" id="filterDate">
         </label>
+
         <label>
           User
           <input type="text" id="filterUser" placeholder="Enter user email">
         </label>
+
         <label>
           Adherence Type
           <select id="filterType">
@@ -325,6 +293,7 @@
             <option value="Training">Training</option>
           </select>
         </label>
+
         <label>
           Timezone
           <select id="timezoneSelect">
@@ -333,10 +302,12 @@
             <option value="Asia/Manila" selected>Philippine Time (PHT)</option>
           </select>
         </label>
+
         <div class="export-btn">
           <button id="exportCsv">Export CSV</button>
         </div>
       </div>
+
       <table>
         <thead>
           <tr>
@@ -351,6 +322,8 @@
       </table>
     </div>
   </div>
+
+  <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <script>
     const { createClient } = supabase;
@@ -361,12 +334,12 @@
     let currentUserEmail = null;
     let currentUserId = null;
     let currentUserRole = "user";
-    let currentAdherenceId = null;
-    let activeAdherenceTimer = null;
 
+    // Elements
     const themeToggle = document.getElementById("themeToggle");
     const logoutLink = document.getElementById("logoutLink");
     const welcomeTextEl = document.getElementById("welcomeText");
+
     const authSection = document.getElementById("authSection");
     const appSection = document.getElementById("appSection");
     const currentUserSpan = document.getElementById("currentUser");
@@ -374,12 +347,14 @@
     const userView = document.getElementById("userView");
     const adminView = document.getElementById("adminView");
 
+    // Dark Mode Toggle
     themeToggle.addEventListener("click", (e) => {
       e.preventDefault();
       document.body.classList.toggle("dark-mode");
       themeToggle.textContent = document.body.classList.contains("dark-mode") ? "Light Mode" : "Dark Mode";
     });
 
+    // Logout link
     logoutLink.addEventListener("click", async (e) => {
       e.preventDefault();
       await db.auth.signOut();
@@ -390,11 +365,10 @@
       welcomeTextEl.classList.add("hidden");
       currentUserSpan.textContent = "";
       currentRoleSpan.textContent = "";
-      if (activeAdherenceTimer) clearInterval(activeAdherenceTimer);
     });
 
+    // Format dates (unchanged)
     function formatDate(dateString, tzSelector = "timezoneSelect") {
-      if (!dateString) return "";
       const tz =
         tzSelector === "timezoneSelect"
           ? document.getElementById(tzSelector)?.value || "Asia/Manila"
@@ -420,9 +394,11 @@
       return { start, end };
     }
 
+    // Login
     document.getElementById("loginBtn").addEventListener("click", async () => {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPassword").value;
+
       const { data, error } = await db.auth.signInWithPassword({ email, password });
       if (error) {
         alert("Login failed: " + error.message);
@@ -434,9 +410,11 @@
       }
     });
 
+    // Signup
     document.getElementById("signupBtn").addEventListener("click", async () => {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPassword").value;
+
       const { error } = await db.auth.signUp({ email, password });
       if (error) {
         alert("Signup failed: " + error.message);
@@ -445,6 +423,7 @@
       }
     });
 
+    // Fetch role
     async function fetchUserRole() {
       const { data, error } = await db.from("profiles").select("role").eq("id", currentUserId).single();
       if (!error && data) {
@@ -454,6 +433,7 @@
       }
     }
 
+    // Show app (now toggles header welcome and logout)
     function showApp() {
       authSection.classList.add("hidden");
       appSection.classList.remove("hidden");
@@ -461,6 +441,7 @@
       currentRoleSpan.textContent = currentUserRole || "user";
       welcomeTextEl.classList.remove("hidden");
       logoutLink.classList.remove("hidden");
+
       if (currentUserRole === "admin") {
         adminView.classList.remove("hidden");
         userView.classList.add("hidden");
@@ -472,6 +453,7 @@
       }
     }
 
+    // Timer formatting
     function formatElapsed(ms) {
       const totalSeconds = Math.floor(ms / 1000);
       const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
@@ -480,69 +462,53 @@
       return `${hours}:${minutes}:${seconds}`;
     }
 
-    // Start adherence (insert with end_time: null)
-    document.getElementById('startBtn').addEventListener('click', async () => {
+    // Start / Stop adherence with timer
+    document.getElementById('startBtn').addEventListener('click', () => {
       startTime = new Date();
       document.getElementById('startBtn').classList.add('hidden');
       document.getElementById('adherenceType').disabled = true;
+      // Show timer and stop button
       document.getElementById('adherenceTimerBox').classList.remove('hidden');
       document.getElementById('runningTime').textContent = "00:00:00";
       timerInterval = setInterval(() => {
         const now = new Date();
         document.getElementById('runningTime').textContent = formatElapsed(now - startTime);
       }, 1000);
+    });
 
-      // Insert record with end_time: null
+    document.getElementById('stopBtn').addEventListener('click', async () => {
+      if (!startTime) return alert("You must start first!");
+      const endTime = new Date();
       const adherenceType = document.getElementById('adherenceType').value;
-      const { data, error } = await db.from('adherence').insert([{
+      const duration = ((endTime - startTime) / 1000 / 60).toFixed(2);
+
+      const { error } = await db.from('adherence').insert([{
         user_id: currentUserId,
         username: currentUserEmail,
         adherence_type: adherenceType,
         start_time: startTime.toISOString(),
-        end_time: null,
-        duration: null
-      }]).select().single();
-
-      if (error) {
-        alert("Failed to start adherence: " + error.message);
-        document.getElementById('startBtn').classList.remove('hidden');
-        document.getElementById('adherenceType').disabled = false;
-        document.getElementById('adherenceTimerBox').classList.add('hidden');
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = null;
-        startTime = null;
-        return;
-      }
-      currentAdherenceId = data.id;
-    });
-
-    // Stop adherence (update the record)
-    document.getElementById('stopBtn').addEventListener('click', async () => {
-      if (!startTime || !currentAdherenceId) return alert("You must start first!");
-      const endTime = new Date();
-      const duration = ((endTime - startTime) / 1000 / 60).toFixed(2);
-
-      const { error } = await db.from('adherence').update({
         end_time: endTime.toISOString(),
         duration
-      }).eq('id', currentAdherenceId);
+      }]);
 
       if (error) console.error(error);
       loadUserRecords();
 
       document.getElementById('startBtn').classList.remove('hidden');
       document.getElementById('adherenceType').disabled = false;
+      // Hide timer and stop button
       document.getElementById('adherenceTimerBox').classList.add('hidden');
       document.getElementById('runningTime').textContent = "00:00:00";
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = null;
       startTime = null;
-      currentAdherenceId = null;
     });
 
+    // Load user records
     async function loadUserRecords() {
       document.getElementById("tableBody").innerHTML = "";
       let query = db.from('adherence').select('*').eq("username", currentUserEmail).order('start_time', { ascending: false });
+
       const date = document.getElementById("userFilterDate").value;
       if (date) {
         const start = new Date(date);
@@ -550,6 +516,7 @@
         end.setDate(end.getDate() + 1);
         query = query.gte("start_time", start.toISOString()).lt("start_time", end.toISOString());
       }
+
       const { data, error } = await query;
       if (!error && data) {
         data.forEach(record => {
@@ -567,61 +534,23 @@
     }
     document.getElementById("userFilterDate").addEventListener("change", loadUserRecords);
 
-    async function loadActiveAdherence() {
-      const tz = document.getElementById("timezoneSelect")?.value || "Asia/Manila";
-      const { data, error } = await db
-        .from("adherence")
-        .select("*")
-        .is("end_time", null);
-
-      const tbody = document.getElementById("activeAdherenceBody");
-      tbody.innerHTML = "";
-
-      if (!error && data && data.length > 0) {
-        data.forEach(record => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${record.username}</td>
-            <td>${record.adherence_type}</td>
-            <td>${formatDate(record.start_time, "timezoneSelect")}</td>
-            <td><span class="running-timer" data-start="${record.start_time}">00:00:00</span></td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } else if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No active adherence sessions.</td></tr>`;
-      }
-      updateActiveTimers();
-    }
-
-    function updateActiveTimers() {
-      const timers = document.querySelectorAll("#activeAdherenceBody .running-timer");
-      timers.forEach(span => {
-        const start = new Date(span.getAttribute("data-start"));
-        const now = new Date();
-        const elapsed = now - start;
-        span.textContent = formatElapsed(elapsed);
-      });
-    }
-
-    function startActiveAdherenceInterval() {
-      if (activeAdherenceTimer) clearInterval(activeAdherenceTimer);
-      activeAdherenceTimer = setInterval(updateActiveTimers, 1000);
-    }
-
+    // Load admin records
     async function loadAdminRecords() {
       document.getElementById("adminTableBody").innerHTML = "";
       let query = db.from("adherence").select("*").order("start_time", { ascending: false });
+
       const date = document.getElementById("filterDate").value;
       const user = document.getElementById("filterUser").value;
       const type = document.getElementById("filterType").value;
       const tz = document.getElementById("timezoneSelect").value;
+
       if (date) {
         const { start, end } = getDayRangeInTimezone(date, tz);
         query = query.gte("start_time", start.toISOString()).lt("start_time", end.toISOString());
       }
       if (user) query = query.ilike("username", `%${user}%`);
       if (type) query = query.eq("adherence_type", type);
+
       const { data, error } = await query;
       if (!error && data) {
         data.forEach(record => {
@@ -636,32 +565,33 @@
           document.getElementById("adminTableBody").appendChild(row);
         });
       }
-      await loadActiveAdherence();
-      startActiveAdherenceInterval();
     }
 
+    // Filters auto-update
     document.getElementById("filterDate").addEventListener("change", loadAdminRecords);
     document.getElementById("filterUser").addEventListener("input", loadAdminRecords);
     document.getElementById("filterType").addEventListener("change", loadAdminRecords);
-    document.getElementById("timezoneSelect").addEventListener("change", () => {
-      loadAdminRecords();
-      loadActiveAdherence();
-    });
+    document.getElementById("timezoneSelect").addEventListener("change", loadAdminRecords);
 
+    // Export CSV
     document.getElementById("exportCsv").addEventListener("click", async () => {
       let query = db.from("adherence").select("*").order("start_time", { ascending: false });
+
       const date = document.getElementById("filterDate").value;
       const user = document.getElementById("filterUser").value;
       const type = document.getElementById("filterType").value;
       const tz = document.getElementById("timezoneSelect").value;
+
       if (date) {
         const { start, end } = getDayRangeInTimezone(date, tz);
         query = query.gte("start_time", start.toISOString()).lt("start_time", end.toISOString());
       }
       if (user) query = query.ilike("username", `%${user}%`);
       if (type) query = query.eq("adherence_type", type);
+
       const { data, error } = await query;
       if (error) return alert("Error exporting CSV");
+
       const rows = [["User", "Adherence Type", "Start Time", "End Time", "Duration"]];
       data.forEach(record => {
         rows.push([
@@ -672,6 +602,7 @@
           record.duration
         ]);
       });
+
       const tzLabel = tz === "America/New_York" ? "EST" : tz === "America/Los_Angeles" ? "PST" : "PHT";
       const csvContent = rows.map(e => e.join(",")).join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -681,10 +612,7 @@
       link.click();
     });
 
-    window.addEventListener("beforeunload", () => {
-      if (activeAdherenceTimer) clearInterval(activeAdherenceTimer);
-    });
-
+    // Check auth state on load
     db.auth.getSession().then(async ({ data }) => {
       if (data.session) {
         currentUserEmail = data.session.user.email;
@@ -695,4 +623,6 @@
     });
   </script>
 </body>
+
 </html>
+
