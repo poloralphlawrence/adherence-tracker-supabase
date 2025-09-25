@@ -11,7 +11,6 @@
     html, body {
       font-family: 'Inter', Arial, Helvetica, sans-serif;
     }
-  <style>
     /* ====== Header ====== */
     .header {
       display: flex;
@@ -152,6 +151,51 @@
     /* ====== Misc/Responsive ====== */
     .hidden { display: none; }
 
+    /* ====== Active Adherence Table ====== */
+    .active-adherence-section {
+      margin: 20px 0 30px 0;
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+      background: #f7f8fa;
+      border-radius: 8px;
+      padding: 18px 12px 10px 12px;
+      box-shadow: 0 1px 4px rgba(60,60,60,0.06);
+    }
+    .active-adherence-section h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 19px;
+      color: #3148F6;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .active-adherence-section table {
+      width: 100%;
+      border-collapse: collapse;
+      background: transparent;
+    }
+    .active-adherence-section th, .active-adherence-section td {
+      padding: 7px 8px;
+      border-bottom: 1px solid #e2e6ee;
+      text-align: left;
+      font-size: 15px;
+    }
+    .active-adherence-section th {
+      background: #eaf0ff;
+      font-weight: 600;
+      color: #3148F6;
+    }
+    .active-adherence-section td {
+      color: #222;
+    }
+    .active-adherence-section .running-timer {
+      font-family: 'Inter', monospace;
+      font-weight: 600;
+      color: #1C4B8F;
+      letter-spacing: 1px;
+    }
+
     @media (max-width: 900px) {
       .user-controls-wrapper {
         width: 90%;
@@ -175,6 +219,13 @@
       }
       .filters-user {
         justify-content: center;
+      }
+      .active-adherence-section {
+        padding: 10px 2px 6px 2px;
+      }
+      .active-adherence-section th, .active-adherence-section td {
+        font-size: 13px;
+        padding: 5px 4px;
       }
     }
   </style>
@@ -267,6 +318,22 @@
     <div id="adminView" class="hidden">
       <h2 style="text-align:center">All Adherence Records</h2>
 
+      <!-- Active Adherence Section -->
+      <div id="activeAdherenceSection" class="active-adherence-section">
+        <h3>Active Adherence Sessions</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Adherence Type</th>
+              <th>Start Time</th>
+              <th>Running Time</th>
+            </tr>
+          </thead>
+          <tbody id="activeAdherenceBody"></tbody>
+        </table>
+      </div>
+
       <div class="filters-admin">
         <label>
           Date
@@ -335,6 +402,9 @@
     let currentUserId = null;
     let currentUserRole = "user";
 
+    // For admin active adherence timers
+    let activeAdherenceTimer = null;
+
     // Elements
     const themeToggle = document.getElementById("themeToggle");
     const logoutLink = document.getElementById("logoutLink");
@@ -365,10 +435,12 @@
       welcomeTextEl.classList.add("hidden");
       currentUserSpan.textContent = "";
       currentRoleSpan.textContent = "";
+      if (activeAdherenceTimer) clearInterval(activeAdherenceTimer);
     });
 
     // Format dates (unchanged)
     function formatDate(dateString, tzSelector = "timezoneSelect") {
+      if (!dateString) return "";
       const tz =
         tzSelector === "timezoneSelect"
           ? document.getElementById(tzSelector)?.value || "Asia/Manila"
@@ -534,7 +606,51 @@
     }
     document.getElementById("userFilterDate").addEventListener("change", loadUserRecords);
 
-    // Load admin records
+    // --- Active Adherence Section for Admin ---
+    async function loadActiveAdherence() {
+      const tz = document.getElementById("timezoneSelect")?.value || "Asia/Manila";
+      const { data, error } = await db
+        .from("adherence")
+        .select("*")
+        .is("end_time", null);
+
+      const tbody = document.getElementById("activeAdherenceBody");
+      tbody.innerHTML = "";
+
+      if (!error && data && data.length > 0) {
+        data.forEach(record => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${record.username}</td>
+            <td>${record.adherence_type}</td>
+            <td>${formatDate(record.start_time, "timezoneSelect")}</td>
+            <td><span class="running-timer" data-start="${record.start_time}">00:00:00</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No active adherence sessions.</td></tr>`;
+      }
+      updateActiveTimers();
+    }
+
+    function updateActiveTimers() {
+      const timers = document.querySelectorAll("#activeAdherenceBody .running-timer");
+      timers.forEach(span => {
+        const start = new Date(span.getAttribute("data-start"));
+        const now = new Date();
+        const elapsed = now - start;
+        span.textContent = formatElapsed(elapsed);
+      });
+    }
+
+    // Set interval to update running timers every second
+    function startActiveAdherenceInterval() {
+      if (activeAdherenceTimer) clearInterval(activeAdherenceTimer);
+      activeAdherenceTimer = setInterval(updateActiveTimers, 1000);
+    }
+
+    // --- Load admin records and also load active adherence ---
     async function loadAdminRecords() {
       document.getElementById("adminTableBody").innerHTML = "";
       let query = db.from("adherence").select("*").order("start_time", { ascending: false });
@@ -565,13 +681,19 @@
           document.getElementById("adminTableBody").appendChild(row);
         });
       }
+      // Load active adherence sessions as well
+      await loadActiveAdherence();
+      startActiveAdherenceInterval();
     }
 
     // Filters auto-update
     document.getElementById("filterDate").addEventListener("change", loadAdminRecords);
     document.getElementById("filterUser").addEventListener("input", loadAdminRecords);
     document.getElementById("filterType").addEventListener("change", loadAdminRecords);
-    document.getElementById("timezoneSelect").addEventListener("change", loadAdminRecords);
+    document.getElementById("timezoneSelect").addEventListener("change", () => {
+      loadAdminRecords();
+      loadActiveAdherence();
+    });
 
     // Export CSV
     document.getElementById("exportCsv").addEventListener("click", async () => {
@@ -612,6 +734,11 @@
       link.click();
     });
 
+    // On page unload, clear interval
+    window.addEventListener("beforeunload", () => {
+      if (activeAdherenceTimer) clearInterval(activeAdherenceTimer);
+    });
+
     // Check auth state on load
     db.auth.getSession().then(async ({ data }) => {
       if (data.session) {
@@ -623,6 +750,4 @@
     });
   </script>
 </body>
-
 </html>
-
